@@ -6,6 +6,7 @@ import { connectDB } from './config/db';
 import authRoutes from './routes/auth.routes';
 import categoryRoutes from './routes/category.routes';
 import companyRoutes from './routes/company.routes';
+import jobRoutes from './routes/job.routes';
 import seekerRoutes from './routes/seeker.routes';
 import skillRoutes from './routes/skill.routes';
 import userRoutes from './routes/user.routes';
@@ -26,6 +27,7 @@ app.use('/api/seeker', seekerRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/companies', companyRoutes);
+app.use('/api/jobs', jobRoutes);
 
 const PORT = process.env.PORT || 4500;
 app.listen(PORT, () => {
