@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { connectDB } from './config/db';
+import applicationRoutes from './routes/application.routes';
 import authRoutes from './routes/auth.routes';
 import categoryRoutes from './routes/category.routes';
 import companyRoutes from './routes/company.routes';
@@ -28,6 +29,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/skills', skillRoutes);
 app.use('/api/companies', companyRoutes);
 app.use('/api/jobs', jobRoutes);
+app.use('/api/applications', applicationRoutes);
 
 const PORT = process.env.PORT || 4500;
 app.listen(PORT, () => {
