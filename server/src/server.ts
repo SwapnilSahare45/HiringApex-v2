@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { connectDB } from './config/db';
+import adminRoutes from './routes/admin.routes';
 import applicationRoutes from './routes/application.routes';
 import authRoutes from './routes/auth.routes';
 import categoryRoutes from './routes/category.routes';
@@ -32,6 +33,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/saved-jobs', savedJobRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 4500;
 app.listen(PORT, () => {
