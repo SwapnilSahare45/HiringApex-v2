@@ -2,12 +2,14 @@ import { Router } from 'express';
 import {
   approveJob,
   approveRecruiter,
+  approveReview,
   deleteCompany,
   deleteJob,
   deleteUser,
   getAllApplications,
   getAllCompanies,
   getAllJobs,
+  getAllReviews,
   getAllUsers,
   getDashboardStats,
   getJobDetail,
@@ -49,6 +51,10 @@ router.get('/applications', authMiddleware, roleCheck('admin'), getAllApplicatio
 router.get('/companies', authMiddleware, roleCheck('admin'), getAllCompanies);
 router.put('/companies/:id/verify', authMiddleware, roleCheck('admin'), verifyCompany);
 router.delete('companies/:id', authMiddleware, roleCheck('admin'), deleteCompany);
+
+// Review
+router.get('/reviews', authMiddleware, roleCheck('admin'), getAllReviews);
+router.put('/reviews/:id', authMiddleware, roleCheck('admin'), approveReview);
 
 // Reports
 router.get('/reports/overview', authMiddleware, roleCheck('admin'), getOverviewReport);

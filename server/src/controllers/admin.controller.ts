@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Application } from '../models/Application';
 import { Company } from '../models/Company';
 import { Job } from '../models/Job';
+import { Review } from '../models/Review';
 import { SavedJob } from '../models/SavedJob';
 import { SeekerProfile } from '../models/Seeker';
 import { User } from '../models/User';
@@ -529,7 +530,85 @@ export const deleteCompany = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// TODO:get all reviews controller & approve review
+export const getAllReviews = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { isApproved, keyword, page = '1', limit = '15' } = req.query;
+
+    const filter: Record<string, any> = {};
+    if (isApproved !== undefined) filter.isApproved = isApproved === 'true';
+    if (keyword) filter.title = { $regex: keyword, $options: 'i' };
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const skip = (pageNum - 1) * limitNum;
+
+    const [reviews, total] = await Promise.all([
+      Review.find(filter)
+        .populate('company', 'name logo')
+        .populate('seeker', 'firstName lastName email')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum),
+      Review.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      reviews,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+};
+
+export const approveReview = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const review = await Review.findByIdAndUpdate(
+      id,
+      { $set: { isApproved: true } },
+      { new: true }
+    );
+
+    if (!review) {
+      res.status(404).json({ message: 'Review not found' });
+      return;
+    }
+
+    // Update company average rating
+    const stats = await Review.aggregate([
+      { $match: { company: review.company, isApproved: true } },
+      { $group: { _id: null, avg: { $avg: '$rating' }, total: { $sum: 1 } } },
+    ]);
+
+    if (stats.length > 0) {
+      await Company.findByIdAndUpdate(review.company, {
+        $set: {
+          averageRating: Math.round(stats[0].avg * 10) / 10,
+          totalReviews: stats[0].total,
+        },
+      });
+    }
+
+    res.status(200).json({ message: 'Review approved successfully', review });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+};
 
 export const getOverviewReport = async (req: Request, res: Response): Promise<void> => {
   try {

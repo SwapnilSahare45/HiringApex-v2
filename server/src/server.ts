@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.routes';
 import categoryRoutes from './routes/category.routes';
 import companyRoutes from './routes/company.routes';
 import jobRoutes from './routes/job.routes';
+import reviewRoutes from './routes/review.routes';
 import savedJobRoutes from './routes/savedJob.routes';
 import seekerRoutes from './routes/seeker.routes';
 import skillRoutes from './routes/skill.routes';
@@ -34,6 +35,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/saved-jobs', savedJobRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 const PORT = process.env.PORT || 4500;
 app.listen(PORT, () => {
