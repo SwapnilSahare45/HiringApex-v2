@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { SeekerProfile } from '../models/Seeker';
 import { AuthRequest } from '../types/user.types';
+import { deleteFromCloudinary, uploadToCloudinary } from '../utils/cloudinary';
 import {
   certificationSchema,
   educationSchema,
@@ -12,9 +13,9 @@ export const getSeekerProfile = async (req: AuthRequest, res: Response): Promise
   try {
     const userId = req.user?.id;
 
-    const seekerProfile = await SeekerProfile.findOne({ user: userId });
-    // .populate('skills', 'name slug')
-    // .populate('skills.category', 'name');
+    const seekerProfile = await SeekerProfile.findOne({ user: userId })
+      .populate('skills', 'name slug')
+      .populate('skills.category', 'name');
 
     if (!seekerProfile) {
       const newProfile = await SeekerProfile.create({ user: userId });
@@ -87,8 +88,6 @@ export const updateSeekerProfile = async (req: AuthRequest, res: Response): Prom
       return;
     }
 
-    // TODO: Resume upload middleware
-
     const {
       headline,
       bio,
@@ -98,7 +97,6 @@ export const updateSeekerProfile = async (req: AuthRequest, res: Response): Prom
       education,
       certifications,
       languages,
-      resume,
       portfolio,
       socialLinks,
       location,
@@ -119,7 +117,6 @@ export const updateSeekerProfile = async (req: AuthRequest, res: Response): Prom
     if (education !== undefined) updateData.education = education;
     if (certifications !== undefined) updateData.certifications = certifications;
     if (languages !== undefined) updateData.languages = languages;
-    if (resume !== undefined) updateData.resume = resume;
     if (portfolio !== undefined) updateData.portfolio = portfolio;
     if (socialLinks !== undefined) updateData.socialLinks = socialLinks;
     if (location !== undefined) updateData.location = location;
@@ -158,8 +155,95 @@ export const updateSeekerProfile = async (req: AuthRequest, res: Response): Prom
   }
 };
 
-//  TODO: Update resume controller
-//  TODO: Delete resume controller
+export const updateResume = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: 'No file uploaded' });
+      return;
+    }
+
+    const userId = req.user?.id;
+
+    const profile = await SeekerProfile.findOne({ user: userId });
+
+    // delete old resume from cloudinary
+    if (profile?.resume?.publicId) {
+      await deleteFromCloudinary(profile.resume.publicId, 'raw');
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, {
+      folder: 'hiring_apex/resumes',
+      publicId: `resume_${userId}_${Date.now()}`,
+      resourceType: 'raw',
+    });
+
+    const updatedProfile = await SeekerProfile.findOneAndUpdate(
+      { user: userId },
+      {
+        $set: {
+          resume: {
+            url: result.secure_url,
+            publicId: result.public_id,
+            originalName: req.file.originalname,
+            uploadedAt: new Date(),
+          },
+        },
+      },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({
+      message: 'Resume uploaded successfully',
+      resume: {
+        url: result.secure_url,
+        originalName: req.file.originalname,
+        uploadedAt: updatedProfile?.resume?.uploadedAt,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+};
+
+export const deleteResume = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+
+    const profile = await SeekerProfile.findOne({ user: userId });
+    if (!profile?.resume?.publicId) {
+      res.status(400).json({ message: 'No resume to delete' });
+      return;
+    }
+
+    await deleteFromCloudinary(profile.resume.publicId, 'raw');
+
+    await SeekerProfile.findOneAndUpdate(
+      { user: userId },
+      {
+        $set: {
+          resume: {
+            url: '',
+            publicId: '',
+            originalName: '',
+            uploadedAt: undefined,
+          },
+        },
+      }
+    );
+
+    res.status(200).json({ message: 'Resume deleted successfully' });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+};
 
 export const addExperience = async (req: AuthRequest, res: Response): Promise<void> => {
   try {

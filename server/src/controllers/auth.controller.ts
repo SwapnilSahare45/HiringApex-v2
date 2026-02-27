@@ -62,9 +62,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     if (role === 'seeker') {
       await SeekerProfile.create({ user: user._id });
     }
-    // else if (role === 'recruiter') {
-    //   await RecruiterProfile.create({ user: user._id });
-    // }
 
     await sendEmail(
       email,
@@ -351,7 +348,9 @@ export const getMe = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
 
-    const user = await User.findById(userId).select('-password');
+    const user = await User.findById(userId).select(
+      '-password -passwordResetExpires -passwordResetToken -avatar.publicId'
+    );
 
     if (!user) {
       res.status(404).json({ message: 'User not found' });

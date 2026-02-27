@@ -39,6 +39,8 @@ export interface ILanguage {
 
 export interface IResume {
   url: string;
+  publicId: string;
+  originalName: string;
   uploadedAt?: Date;
 }
 

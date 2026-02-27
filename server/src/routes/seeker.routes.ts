@@ -6,21 +6,31 @@ import {
   deleteCertification,
   deleteEducation,
   deleteExperience,
+  deleteResume,
   getSeekerProfile,
   updateCertification,
   updateEducation,
   updateExperience,
+  updateResume,
   updateSeekerProfile,
 } from '../controllers/seeker.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { roleCheck } from '../middlewares/roleCheck.middleware';
+import { handleUploadError, uploadResumeMulter } from '../middlewares/upload.middleware';
 
 const router = Router();
 
 router.get('/profile', authMiddleware, roleCheck('seeker'), getSeekerProfile);
 router.put('/profile', authMiddleware, roleCheck('seeker'), updateSeekerProfile);
-// TODO: Update resume route
-// TODO: Delete resume route
+router.put(
+  '/resume',
+  authMiddleware,
+  roleCheck('seeker'),
+  uploadResumeMulter.single('resume'),
+  handleUploadError,
+  updateResume
+);
+router.delete('/resume', authMiddleware, roleCheck('seeker'), deleteResume);
 router.put('/experience', authMiddleware, roleCheck('seeker'), addExperience);
 router.put('/experience/:expId', authMiddleware, roleCheck('seeker'), updateExperience);
 router.delete('/experience/:expId', authMiddleware, roleCheck('seeker'), deleteExperience);

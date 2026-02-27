@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Company } from '../models/Company';
 import { AuthRequest } from '../types/user.types';
+import { deleteFromCloudinary, uploadToCloudinary } from '../utils/cloudinary';
 import { createCompanySchema, updateCompanySchema } from '../validators/company.validator';
 
 // TODO: Company logo and cover image upload implementation
@@ -180,6 +181,90 @@ export const deleteCompany = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-// TODO: Upload logo controller
-// TODO: Upload cover image controller
+export const uploadCompnayLogo = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: 'No file uploaded' });
+      return;
+    }
+
+    const { companyId } = req.params;
+    const userId = req.user?.id;
+
+    const company = await Company.findOne({ _id: companyId, recruiter: userId });
+    if (!company) {
+      res.status(404).json({ message: 'Compnay not found or you are not an admin' });
+      return;
+    }
+
+    // delete old logo
+    if (company?.logo?.publicId) {
+      await deleteFromCloudinary(company.logo.publicId, 'image');
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, {
+      folder: 'hiring_apex/company/logo',
+      publicId: `logo_${companyId}`,
+      resourceType: 'image',
+    });
+
+    await Company.findByIdAndUpdate(companyId, {
+      $set: { logo: { url: result.secure_url, publicId: result.public_id } },
+    });
+
+    res
+      .status(200)
+      .json({ message: 'Company logo uploaded successfully', logo: { url: result.secure_url } });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+};
+
+export const uploadCompanyCover = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ message: 'No file uploaded' });
+      return;
+    }
+
+    const companyId = req.params;
+    const userId = req.user?.id;
+
+    const company = await Company.findOne({ _id: companyId, recruiter: userId });
+    if (!company) {
+      res.status(404).json({ message: 'Compnay not found or you are not an admin' });
+      return;
+    }
+
+    // delete old cover
+    if (company?.coverImage?.publicId) {
+      await deleteFromCloudinary(company.coverImage.publicId, 'image');
+    }
+
+    const result = await uploadToCloudinary(req.file.buffer, {
+      folder: 'hiring_apex/company/cover',
+      publicId: `cover_${companyId}`,
+      resourceType: 'image',
+    });
+
+    await Company.findByIdAndUpdate(companyId, {
+      $set: { coverImage: { url: result.secure_url, publicId: result.public_id } },
+    });
+    res.status(200).json({
+      message: 'Company cover uploaded successfully',
+      coverImage: { url: result.secure_url },
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.status(400).json({ message: error.message });
+    } else {
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+};
+
 // TODO: Get company jobs

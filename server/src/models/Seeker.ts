@@ -73,6 +73,8 @@ const seekerProfileSchema = new Schema<ISeeker>(
     ],
     resume: {
       url: { type: String, default: '' },
+      publicId: { type: String, default: '' },
+      originalName: { type: String, default: '' },
       uploadedAt: { type: Date },
     },
     portfolio: {
