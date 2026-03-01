@@ -49,6 +49,10 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
     otp: String,
     otpExpires: Date,
     otpVerificationToken: String,

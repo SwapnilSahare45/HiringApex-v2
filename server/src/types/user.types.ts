@@ -16,6 +16,7 @@ export interface IUser {
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   isApproved: boolean;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

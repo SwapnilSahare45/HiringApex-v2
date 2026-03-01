@@ -231,7 +231,7 @@ export const uploadCompanyCover = async (req: AuthRequest, res: Response): Promi
       return;
     }
 
-    const companyId = req.params;
+    const { companyId } = req.params;
     const userId = req.user?.id;
 
     const company = await Company.findOne({ _id: companyId, recruiter: userId });
