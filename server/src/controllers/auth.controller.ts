@@ -211,6 +211,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
     if (!email) {
       res.status(400).json({ message: 'Email is required' });
+      return;
     }
 
     const user = await User.findOne({ email });
